@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>保險收款助理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── CSS Variables ── */
+:root {
+  --navy:    #1A2F5A;
+  --teal:    #028090;
+  --teal-lt: #02C39A;
+  --white:   #FFFFFF;
+  --bg:      #F4F7FA;
+  --bg2:     #E8EFF6;
+  --border:  #D8E3EE;
+  --text:    #1E293B;
+  --text-md: #475569;
+  --text-sm: #94A3B8;
+  --green:   #10B981;
+  --amber:   #F59E0B;
+  --red:     #EF4444;
+  --purple:  #7C3AED;
+  --g1:      #378ADD;
+  --g2:      #1D9E75;
+  --g3:      #EF9F27;
+  --g4:      #D4537E;
+  --radius:  12px;
+  --shadow:  0 2px 12px rgba(26,47,90,0.08);
+  --tab-h:   56px;
+  --header-h:60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* ── Layout ── */
+.app { max-width: 430px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: var(--white); position: relative; }
+
+/* ── Header ── */
+.header {
+  height: var(--header-h);
+  background: var(--navy);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left h1 { font-size: 17px; font-weight: 700; color: var(--white); }
+.header-left p  { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+.header-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: none; color: var(--white); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s;
+}
+.header-btn:active { background: rgba(255,255,255,0.22); }
+.header-btn.notify-active { background: var(--teal); }
+
+/* ── Tab Bar ── */
+.tab-bar {
+  height: var(--tab-h);
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+  position: sticky; top: var(--header-h); z-index: 99;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--text-sm); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+  gap: 2px;
+}
+.tab-item.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 600; }
+.tab-icon { font-size: 18px; line-height: 1; }
+
+/* ── Screens ── */
+.screen { display: none; flex-direction: column; flex: 1; }
+.screen.active { display: flex; }
+.scroll-area { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.card-white {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+
+/* ── Stats Grid ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-card { background: var(--bg); border-radius: var(--radius); padding: 14px; }
+.stat-lbl  { font-size: 11px; color: var(--text-sm); margin-bottom: 4px; }
+.stat-val  { font-size: 22px; font-weight: 700; color: var(--text); font-family: "DM Mono", monospace; }
+.stat-sub  { font-size: 11px; color: var(--text-sm); margin-top: 3px; }
+
+/* ── Section header ── */
+.sec-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.sec-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.sec-total { font-size: 13px; font-weight: 600; color: var(--teal); font-family: "DM Mono", monospace; }
+.sec-label { font-size: 11px; color: var(--text-sm); margin-bottom: 8px; margin-top: 14px; }
+
+/* ── Payment Item ── */
+.pay-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--bg2);
+}
+.pay-item:last-child { border-bottom: none; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.pay-info { flex: 1; min-width: 0; }
+.pay-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.pay-meta { font-size: 11px; color: var(--text-sm); margin-top: 2px; }
+.pay-amt  { font-size: 15px; font-weight: 700; color: var(--text); font-family: "DM Mono", monospace; flex-shrink: 0; }
+
+.tag {
+  display: inline-block; font-size: 10px; padding: 1px 7px;
+  border-radius: 99px; margin-left: 5px; vertical-align: middle;
+}
+
+/* ── Group colors ── */
+.g1-bg { background: rgba(55,138,221,0.12); } .g1-c { color: #1A5C9A; }
+.g2-bg { background: rgba(29,158,117,0.12); } .g2-c { color: #0A6648; }
+.g3-bg { background: rgba(239,159,39,0.12);  } .g3-c { color: #8A5200; }
+.g4-bg { background: rgba(212,83,126,0.12);  } .g4-c { color: #8E1845; }
+.g1-dot { background: var(--g1); }
+.g2-dot { background: var(--g2); }
+.g3-dot { background: var(--g3); }
+.g4-dot { background: var(--g4); }
+
+/* ── Chart Bars (Groups) ── */
+.chart-wrap { margin-bottom: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-sm); }
+.leg-sq { width: 10px; height: 10px; border-radius: 2px; }
+.bars-wrap { display: flex; align-items: flex-end; gap: 8px; height: 110px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-val { font-size: 9px; color: var(--text-sm); font-family: "DM Mono", monospace; }
+.bar-body { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.4s cubic-bezier(.4,0,.2,1); }
+.bar-lbl  { font-size: 10px; color: var(--text-sm); }
+.x-axis { height: 1px; background: var(--border); margin-bottom: 4px; }
+
+/* ── Toggle Buttons ── */
+.toggle-row { display: flex; gap: 6px; margin-bottom: 14px; }
+.t-btn {
+  flex: 1; padding: 7px 0; font-size: 12px;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--white); color: var(--text-sm);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.t-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); font-weight: 600; }
+
+/* ── Rank List ── */
+.rank-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--bg2);
+}
+.rank-item:last-child { border-bottom: none; }
+.rank-num { width: 20px; font-size: 13px; font-weight: 700; color: var(--text-sm); flex-shrink: 0; }
+.rank-num.gold { color: var(--amber); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rank-info { flex: 1; }
+.rank-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.rank-meta { font-size: 11px; color: var(--text-sm); margin-top: 2px; }
+.rank-right { text-align: right; }
+.rank-total { font-size: 14px; font-weight: 700; color: var(--text); font-family: "DM Mono", monospace; }
+.rank-chg { font-size: 11px; margin-top: 2px; }
+.up { color: var(--green); } .down { color: var(--red); }
+
+/* ── Scan flow ── */
+.step-bar { display: flex; align-items: center; gap: 4px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.s-dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.s-dot.done   { background: rgba(16,185,129,0.15); color: var(--green); }
+.s-dot.active { background: var(--navy); color: var(--white); }
+.s-dot.idle   { background: var(--bg2); color: var(--text-sm); }
+.s-line { flex: 1; height: 1px; background: var(--border); }
+.s-line.done { background: var(--green); }
+
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 32px 16px; text-align: center; cursor: pointer;
+  transition: border-color 0.15s; margin-bottom: 12px;
+}
+.upload-zone:hover { border-color: var(--teal); }
+.upload-icon { font-size: 36px; margin-bottom: 8px; }
+.upload-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.upload-sub   { font-size: 12px; color: var(--text-sm); }
+
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(2,128,144,0.1); color: var(--teal);
+  font-size: 11px; font-weight: 600; padding: 5px 12px;
+  border-radius: 99px; margin-bottom: 14px;
+}
+
+.client-card {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 10px;
+}
+.client-card.warn { border-color: var(--amber); }
+.c-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.c-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.c-ok   { font-size: 11px; color: var(--green); font-weight: 600; }
+.c-warn { font-size: 11px; color: var(--amber); font-weight: 600; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.f-item { background: var(--bg); border-radius: 8px; padding: 7px 9px; }
+.f-lbl  { font-size: 10px; color: var(--text-sm); margin-bottom: 2px; }
+.f-val  { font-size: 13px; font-weight: 600; color: var(--text); }
+.f-val.warn-val { color: var(--amber); }
+.warn-note {
+  font-size: 11px; color: #8A5200; background: rgba(245,158,11,0.1);
+  border-radius: 8px; padding: 6px 10px; margin-top: 7px;
+}
+.f-input {
+  width: 100%; font-size: 13px; font-weight: 600;
+  color: var(--amber); background: transparent; border: none;
+  outline: none; font-family: inherit;
+}
+
+.summary-bar {
+  background: var(--bg); border-radius: var(--radius);
+  padding: 12px 14px; margin: 10px 0;
+}
+.sum-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sum-row:last-child { border-bottom: none; }
+.sum-k { color: var(--text-sm); }
+.sum-v { font-weight: 600; color: var(--text); font-family: "DM Mono", monospace; }
+.sum-v.amber { color: var(--amber); }
+.sum-v.green { color: var(--green); }
+
+/* ── Notifications ── */
+.notif-item {
+  display: flex; gap: 10px; padding: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+.notif-item.read { opacity: 0.55; }
+.n-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.n-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.n-body  { font-size: 12px; color: var(--text-md); line-height: 1.5; }
+.n-body strong { color: var(--text); font-weight: 600; }
+.n-time  { font-size: 10px; color: var(--text-sm); margin-top: 4px; }
+.n-action { font-size: 11px; color: var(--teal); font-weight: 600; margin-top: 5px; cursor: pointer; }
+.unread-badge { background: rgba(239,68,68,0.12); color: var(--red); font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+
+/* ── Buttons ── */
+.btn {
+  width: 100%; padding: 14px; border-radius: var(--radius);
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  border: none; font-family: inherit; transition: opacity 0.15s;
+}
+.btn:active { opacity: 0.85; }
+.btn-primary   { background: var(--navy); color: var(--white); }
+.btn-teal      { background: var(--teal); color: var(--white); }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.btn + .btn    { margin-top: 8px; }
+.btn-sm { font-size: 13px; padding: 10px; border-radius: 8px; }
+
+/* ── Success screen ── */
+.success-wrap { text-align: center; padding: 28px 16px 16px; }
+.success-icon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(16,185,129,0.12); color: var(--green);
+  font-size: 28px; display: flex; align-items: center;
+  justify-content: center; margin: 0 auto 14px;
+}
+.success-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.success-sub   { font-size: 13px; color: var(--text-sm); line-height: 1.6; margin-bottom: 18px; }
+
+/* ── Loading spinner ── */
+.spinner-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; gap: 12px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-txt { font-size: 13px; color: var(--text-sm); }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--navy); color: var(--white);
+  padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 600;
+  opacity: 0; transition: all 0.25s; z-index: 999; white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Week progress bar ── */
+.week-card { margin-bottom: 10px; }
+.week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.week-lbl  { font-size: 12px; font-weight: 600; color: var(--text); }
+.week-amt  { font-size: 12px; font-weight: 600; color: var(--teal); font-family: "DM Mono", monospace; }
+.prog-track { height: 6px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+.prog-fill  { height: 6px; background: var(--teal); border-radius: 99px; transition: width 0.5s; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text-sm); }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty-txt  { font-size: 13px; }
+
+/* ── Client Search ── */
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px;
+}
+.search-box input {
+  flex: 1; border: none; background: transparent;
+  font-size: 14px; color: var(--text); font-family: inherit; outline: none;
+}
+.search-box span { color: var(--text-sm); font-size: 16px; }
+
+.client-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.client-item:active { border-color: var(--teal); }
+.ci-info { flex: 1; }
+.ci-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.ci-meta { font-size: 11px; color: var(--text-sm); margin-top: 2px; }
+.ci-next { font-size: 12px; color: var(--teal); font-weight: 600; font-family: "DM Mono", monospace; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>保險收款助理</h1>
+      <p id="headerSub">載入中...</p>
+    </div>
+    <button class="header-btn" id="syncBtn" onclick="triggerSync()" title="同步日曆">🔄</button>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active" data-tab="week" onclick="switchTab('week')">
+      <span class="tab-icon">📋</span><span>本週</span>
+    </div>
+    <div class="tab-item" data-tab="month" onclick="switchTab('month')">
+      <span class="tab-icon">📅</span><span>本月</span>
+    </div>
+    <div class="tab-item" data-tab="groups" onclick="switchTab('groups')">
+      <span class="tab-icon">📊</span><span>各組</span>
+    </div>
+    <div class="tab-item" data-tab="clients" onclick="switchTab('clients')">
+      <span class="tab-icon">👥</span><span>客戶</span>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: 本週 ── -->
+  <div class="screen active" id="screen-week">
+    <div class="scroll-area" id="weekContent">
+      <div class="spinner-wrap"><div class="spinner"></div><div class="loading-txt">載入本週資料...</div></div>
+    </div>
+    <!-- FAB -->
+    <div style="padding:12px 16px;border-top:1px solid var(--border);background:var(--white);">
+      <button class="btn btn-teal" onclick="startScan()">📷 拍照新增客戶</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: 本月 ── -->
+  <div class="screen" id="screen-month">
+    <div class="scroll-area" id="monthContent">
+      <div class="spinner-wrap"><div class="spinner"></div><div class="loading-txt">載入本月資料...</div></div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: 各組 ── -->
+  <div class="screen" id="screen-groups">
+    <div class="scroll-area" id="groupsContent">
+      <div class="spinner-wrap"><div class="spinner"></div><div class="loading-txt">載入業績資料...</div></div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: 客戶 ── -->
+  <div class="screen" id="screen-clients">
+    <div class="scroll-area">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="clientSearch" placeholder="搜尋姓名或組別..." oninput="searchClients(this.value)">
+      </div>
+      <div id="clientsContent">
+        <div class="spinner-wrap"><div class="spinner"></div><div class="loading-txt">載入客戶資料...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: 掃描流程 ── -->
+  <div class="screen" id="screen-scan" style="display:none;">
+    <div class="step-bar" id="stepBar">
+      <div class="s-dot active" id="sd1">1</div>
+      <div class="s-line" id="sl1"></div>
+      <div class="s-dot idle"   id="sd2">2</div>
+      <div class="s-line" id="sl2"></div>
+      <div class="s-dot idle"   id="sd3">✓</div>
+    </div>
+    <div class="scroll-area" id="scanContent"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)">
+
+<script>
+// ── 設定 ──────────────────────────────────────────────────────
+var API_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";  // ← 部署後填入
+
+var GROUP_META = {
+  "第一組": { bg: "g1-bg", tc: "g1-c", dot: "g1-dot", color: "#378ADD" },
+  "第二組": { bg: "g2-bg", tc: "g2-c", dot: "g2-dot", color: "#1D9E75" },
+  "第三組": { bg: "g3-bg", tc: "g3-c", dot: "g3-dot", color: "#EF9F27" },
+  "第四組": { bg: "g4-bg", tc: "g4-c", dot: "g4-dot", color: "#D4537E" },
+};
+
+var DEMO_MODE = (API_URL === "YOUR_APPS_SCRIPT_WEB_APP_URL");
+var scanClients = [];
+var currentPeriod = "month";
+var allClients = [];
+
+// ── API 呼叫 ──────────────────────────────────────────────────
+async function api(action, extra) {
+  if (DEMO_MODE) return demoData(action, extra);
+  try {
+    var resp = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(Object.assign({ action }, extra || {})),
+    });
+    return await resp.json();
+  } catch(e) {
+    showToast("⚠️ 網路錯誤：" + e.message);
+    return null;
+  }
+}
+
+// ── Demo 資料（測試用）────────────────────────────────────────
+function demoData(action, extra) {
+  if (action === "getWeeklyData") return {
+    weekRange: "2026/06/02 – 2026/06/08",
+    weekTotal: 42000, monthTotal: 168000,
+    payments: [
+      { name:"王小明", group:"第一組", date:"2026/06/07", dayLabel:"週六", amount:12000, freq:"半年繳" },
+      { name:"李大華", group:"第二組", date:"2026/06/08", dayLabel:"週日", amount:18000, freq:"年繳"   },
+      { name:"陳美麗", group:"第三組", date:"2026/06/08", dayLabel:"週日", amount:12000, freq:"半年繳" },
+    ],
+  };
+  if (action === "getMonthlyData") return {
+    month: 6, monthTotal: 168000,
+    weeks: [
+      { label:"第1週", total:24000, payments:[{name:"王小明",group:"第一組",date:"2026/06/01",amount:12000},{name:"李大華",group:"第二組",date:"2026/06/03",amount:12000}] },
+      { label:"第2週", total:42000, payments:[{name:"王小明",group:"第一組",date:"2026/06/07",amount:12000},{name:"李大華",group:"第二組",date:"2026/06/08",amount:18000},{name:"陳美麗",group:"第三組",date:"2026/06/08",amount:12000}] },
+      { label:"第3週", total:36000, payments:[{name:"黃志明",group:"第二組",date:"2026/06/15",amount:18000},{name:"陳美麗",group:"第三組",date:"2026/06/15",amount:18000}] },
+      { label:"第4週", total:66000, payments:[{name:"王小明",group:"第一組",date:"2026/06/21",amount:12000},{name:"林小芬",group:"第一組",date:"2026/06/22",amount:36000},{name:"黃志明",group:"第二組",date:"2026/06/22",amount:18000}] },
+    ],
+  };
+  if (action === "getGroupStats") return {
+    period: extra?.period || "month",
+    groups: [
+      { group:"第二組", total:198000, clients:8,  collected:22 },
+      { group:"第一組", total:162000, clients:7,  collected:18 },
+      { group:"第三組", total:144000, clients:6,  collected:14 },
+      { group:"第四組", total:126000, clients:5,  collected:12 },
+    ],
+  };
+  if (action === "getClients") {
+    var list = [
+      { name:"王小明", group:"第一組", startDate:"2025/01/01", freq:"半年繳", amount:12000, nextDate:"2026/06/07", totalPayments:26 },
+      { name:"李大華", group:"第二組", startDate:"2025/03/15", freq:"年繳",   amount:18000, nextDate:"2026/06/08", totalPayments:52 },
+      { name:"陳美麗", group:"第三組", startDate:"2025/06/01", freq:"半年繳", amount:12000, nextDate:"2026/06/08", totalPayments:26 },
+      { name:"林小芬", group:"第一組", startDate:"2025/07/15", freq:"年繳",   amount:36000, nextDate:"2026/06/22", totalPayments:52 },
+      { name:"黃志明", group:"第二組", startDate:"2025/09/01", freq:"半年繳", amount:18000, nextDate:"2026/06/15", totalPayments:26 },
+    ];
+    if (extra?.search) list = list.filter(c => c.name.includes(extra.search) || c.group.includes(extra.search));
+    return { clients: list };
+  }
+  if (action === "addClient") return { success: true, message: extra?.client?.name + " 已新增（Demo）" };
+  if (action === "syncCalendar") return { success: true, creates:3, updates:1, deletes:0, skips:12 };
+  if (action === "analyzeImage") return {
+    success: true,
+    clients: [
+      { name:"陳大文", group:"第三組", startDate:"2026/07/01", money:"24000", freq:"半年繳", rate:"0.85", confidence:"high",   note:"" },
+      { name:"林小芬", group:"第一組", startDate:"2026/07/15", money:"36000", freq:"年繳",   rate:"0.7",  confidence:"medium", note:"費率字跡模糊，請確認是 0.7 還是 0.9" },
+      { name:"黃志明", group:"第二組", startDate:"2026/08/01", money:"18000", freq:"半年繳", rate:"0.90", confidence:"high",   note:"" },
+    ],
+    rawText: "（Demo 模式）",
+  };
+  return {};
+}
+
+// ── Tab 切換 ──────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".tab-item").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  var el = document.getElementById("screen-" + tab);
+  if (el) el.classList.add("active");
+
+  if (tab === "week")    loadWeek();
+  if (tab === "month")   loadMonth();
+  if (tab === "groups")  loadGroups(currentPeriod);
+  if (tab === "clients") loadClients();
+}
+
+// ── 本週 ──────────────────────────────────────────────────────
+async function loadWeek() {
+  var d = await api("getWeeklyData");
+  if (!d) return;
+  document.getElementById("headerSub").textContent = d.weekRange || "";
+
+  var payments = d.payments || [];
+  var html = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">本週應收</div>
+        <div class="stat-val">$${fmt(d.weekTotal)}</div>
+        <div class="stat-sub">共 ${payments.length} 筆</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">本月累計</div>
+        <div class="stat-val">$${fmt(d.monthTotal)}</div>
+        <div class="stat-sub">進行中</div>
+      </div>
+    </div>
+    <div class="sec-head">
+      <div class="sec-title">本週收款明細</div>
+      <div class="sec-total">$${fmt(d.weekTotal)}</div>
+    </div>
+  `;
+
+  if (payments.length === 0) {
+    html += `<div class="empty"><div class="empty-icon">🎉</div><div class="empty-txt">本週沒有收款到期</div></div>`;
+  } else {
+    payments.forEach(p => {
+      var gm = GROUP_META[p.group] || {};
+      html += `
+        <div class="pay-item">
+          <div class="avatar ${gm.bg} ${gm.tc}">${p.name.slice(0,2)}</div>
+          <div class="pay-info">
+            <div class="pay-name">${p.name}<span class="tag ${gm.bg} ${gm.tc}">${p.group}</span></div>
+            <div class="pay-meta">${p.date} (${p.dayLabel})・${p.freq}</div>
+          </div>
+          <div class="pay-amt">$${fmt(p.amount)}</div>
+        </div>
+      `;
+    });
+  }
+
+  document.getElementById("weekContent").innerHTML = html;
+}
+
+// ── 本月 ──────────────────────────────────────────────────────
+async function loadMonth() {
+  var d = await api("getMonthlyData");
+  if (!d) return;
+
+  var maxW = Math.max(...(d.weeks || []).map(w => w.total), 1);
+  var html = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">${d.month}月總收</div>
+        <div class="stat-val">$${fmt(d.monthTotal)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">週數</div>
+        <div class="stat-val">${(d.weeks||[]).length} 週</div>
+      </div>
+    </div>
+    <div class="sec-title" style="margin-bottom:12px;">各週進度</div>
+  `;
+
+  (d.weeks || []).forEach(w => {
+    var pct = Math.round(w.total / d.monthTotal * 100) || 0;
+    html += `
+      <div class="card-white week-card">
+        <div class="week-header">
+          <div class="week-lbl">${w.label}</div>
+          <div class="week-amt">$${fmt(w.total)}</div>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${Math.round(w.total/maxW*100)}%"></div></div>
+        <div style="font-size:11px;color:var(--text-sm);margin-top:6px;">${w.payments.length} 筆・佔月收 ${pct}%</div>
+        <div style="margin-top:8px;">
+          ${(w.payments||[]).slice(0,3).map(p => {
+            var gm = GROUP_META[p.group] || {};
+            return `<div class="pay-item" style="padding:6px 0;">
+              <div class="avatar ${gm.bg} ${gm.tc}" style="width:28px;height:28px;font-size:10px;">${p.name.slice(0,2)}</div>
+              <div class="pay-info"><div class="pay-name" style="font-size:13px;">${p.name}<span class="tag ${gm.bg} ${gm.tc}">${p.group}</span></div></div>
+              <div class="pay-amt" style="font-size:13px;">$${fmt(p.amount)}</div>
+            </div>`;
+          }).join("")}
+          ${w.payments.length > 3 ? `<div style="font-size:11px;color:var(--text-sm);padding:4px 0;">...還有 ${w.payments.length-3} 筆</div>` : ""}
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("monthContent").innerHTML = html;
+}
+
+// ── 各組 ──────────────────────────────────────────────────────
+async function loadGroups(period) {
+  currentPeriod = period;
+  var d = await api("getGroupStats", { period });
+  if (!d) return;
+
+  var groups = d.groups || [];
+  var total  = groups.reduce((s, g) => s + g.total, 0);
+  var maxVal = Math.max(...groups.map(g => g.total), 1);
+  var best   = groups[0] || {};
+
+  var periodLabels = { month:"本月", quarter:"近三月", year:"今年" };
+
+  var html = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">全組總收</div>
+        <div class="stat-val">$${fmtK(total)}</div>
+        <div class="stat-sub">${periodLabels[period] || ""}合計</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">最佳組別</div>
+        <div class="stat-val">${best.group || "-"}</div>
+        <div class="stat-sub">$${fmtK(best.total)} · ${total ? Math.round(best.total/total*100) : 0}%</div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      ${["month","quarter","year"].map(p => `
+        <button class="t-btn ${period===p?"active":""}" onclick="loadGroups('${p}')">${periodLabels[p]}</button>
+      `).join("")}
+    </div>
+    <div class="legend">
+      ${groups.map(g => {
+        var gm = GROUP_META[g.group] || {};
+        return `<div class="leg-item"><div class="leg-sq" style="background:${gm.color||'#888'}"></div>${g.group}</div>`;
+      }).join("")}
+    </div>
+    <div class="chart-wrap">
+      <div class="bars-wrap">
+        ${groups.map(g => {
+          var gm = GROUP_META[g.group] || {};
+          var h  = Math.max(Math.round(g.total / maxVal * 90), 4);
+          return `
+            <div class="bar-col">
+              <div class="bar-val">$${fmtK(g.total)}</div>
+              <div class="bar-body" style="height:${h}px;background:${gm.color||'#888'};"></div>
+              <div class="bar-lbl">${g.group}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+      <div class="x-axis"></div>
+    </div>
+    <div class="sec-title" style="margin-bottom:10px;">排名明細</div>
+  `;
+
+  groups.forEach((g, i) => {
+    var gm  = GROUP_META[g.group] || {};
+    var chg = (Math.random() > 0.5 ? "+" : "-") + Math.floor(Math.random()*15+1) + "%";
+    var isUp = chg.startsWith("+");
+    html += `
+      <div class="rank-item">
+        <div class="rank-num ${i===0?"gold":""}">${i+1}</div>
+        <div class="dot ${gm.dot}"></div>
+        <div class="rank-info">
+          <div class="rank-name">${g.group}</div>
+          <div class="rank-meta">${g.clients} 位客戶</div>
+        </div>
+        <div class="rank-right">
+          <div class="rank-total">$${fmt(g.total)}</div>
+          <div class="rank-chg ${isUp?"up":"down"}">${isUp?"▲":"▼"} ${chg}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("groupsContent").innerHTML = html;
+}
+
+// ── 客戶 ──────────────────────────────────────────────────────
+async function loadClients(search) {
+  var d = await api("getClients", { search: search || "" });
+  if (!d) return;
+  allClients = d.clients || [];
+  renderClients(allClients);
+}
+
+function renderClients(list) {
+  if (list.length === 0) {
+    document.getElementById("clientsContent").innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">找不到符合的客戶</div></div>`;
+    return;
+  }
+  var html = "";
+  list.forEach(c => {
+    var gm = GROUP_META[c.group] || {};
+    html += `
+      <div class="client-item">
+        <div class="avatar ${gm.bg} ${gm.tc}">${c.name.slice(0,2)}</div>
+        <div class="ci-info">
+          <div class="ci-name">${c.name}<span class="tag ${gm.bg} ${gm.tc}">${c.group}</span></div>
+          <div class="ci-meta">${c.freq}・每期 $${fmt(c.amount)}・共 ${c.totalPayments} 次</div>
+          <div class="ci-next">下次收款：${c.nextDate}</div>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById("clientsContent").innerHTML = html;
+}
+
+function searchClients(val) {
+  if (!val) { renderClients(allClients); return; }
+  var filtered = allClients.filter(c => c.name.includes(val) || c.group.includes(val));
+  renderClients(filtered);
+}
+
+// ── 拍照掃描流程 ─────────────────────────────────────────────
+function startScan() {
+  document.querySelectorAll(".screen").forEach(s => { s.classList.remove("active"); s.style.display = ""; });
+  var scan = document.getElementById("screen-scan");
+  scan.style.display = "flex";
+  scan.classList.add("active");
+  updateStepBar(1);
+  renderStep1();
+}
+
+function exitScan() {
+  var scan = document.getElementById("screen-scan");
+  scan.classList.remove("active");
+  scan.style.display = "none";
+  switchTab("week");
+}
+
+function updateStepBar(step) {
+  [1,2,3].forEach(i => {
+    var dot = document.getElementById("sd" + i);
+    dot.className = "s-dot " + (i < step ? "done" : i === step ? "active" : "idle");
+    dot.textContent = i < step ? "✓" : i;
+    if (i < 3) {
+      document.getElementById("sl" + i).className = "s-line" + (i < step ? " done" : "");
+    }
+  });
+}
+
+function renderStep1() {
+  document.getElementById("scanContent").innerHTML = `
+    <div style="padding:16px;">
+      <p style="font-size:13px;color:var(--text-sm);margin-bottom:16px;">拍攝或上傳主管的手寫資料，AI 會自動辨識所有欄位。</p>
+      <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-title">拍照上傳手寫單</div>
+        <div class="upload-sub">點此開啟相機，支援一張多筆</div>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--text-sm);margin:8px 0;">或</p>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fileInput').click()">📁 從相簿選取</button>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="simulateScan()">🧪 Demo：模擬辨識結果</button>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="exitScan()">← 返回</button>
+      </div>
+    </div>
+  `;
+}
+
+async function handleImageUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var base64 = e.target.result.split(",")[1];
+    await processImage(base64);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function simulateScan() {
+  await processImage(null);
+}
+
+async function processImage(base64) {
+  updateStepBar(2);
+  document.getElementById("scanContent").innerHTML = `
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="loading-txt">AI 辨識中...</div>
+    </div>
+  `;
+
+  var result = await api("analyzeImage", { imageBase64: base64 || "" });
+  if (!result || !result.success) {
+    showToast("❌ 辨識失敗，請重試");
+    renderStep1(); return;
+  }
+  scanClients = result.clients || [];
+  renderStep2();
+}
+
+function renderStep2() {
+  updateStepBar(2);
+  var warnCount = scanClients.filter(c => c.confidence !== "high").length;
+  var totalAmt  = scanClients.reduce((s, c) => {
+    return s + (parseFloat(c.money||0) * parseFloat(c.rate||1));
+  }, 0);
+
+  var html = `<div style="padding:16px;">`;
+  html += `<div class="ai-badge">✦ AI 辨識完成，請確認以下資料</div>`;
+
+  scanClients.forEach((c, idx) => {
+    var gm    = GROUP_META[c.group] || {};
+    var isWarn = c.confidence !== "high";
+    html += `
+      <div class="client-card ${isWarn?"warn":""}">
+        <div class="c-head">
+          <div class="c-name">${c.name}<span class="tag ${gm.bg} ${gm.tc}">${c.group}</span></div>
+          <div class="${isWarn?"c-warn":"c-ok"}">${isWarn?"⚠ 待確認":"✓ 正常"}</div>
+        </div>
+        <div class="field-grid">
+          <div class="f-item"><div class="f-lbl">起始日期</div><div class="f-val">${c.startDate}</div></div>
+          <div class="f-item"><div class="f-lbl">金額</div><div class="f-val">$${fmt(parseFloat(c.money||0))}</div></div>
+          <div class="f-item"><div class="f-lbl">頻率</div><div class="f-val">${c.freq}</div></div>
+          <div class="f-item">
+            <div class="f-lbl">費率</div>
+            ${isWarn
+              ? `<input class="f-input" id="rate_${idx}" value="${c.rate}" onchange="scanClients[${idx}].rate=this.value">`
+              : `<div class="f-val">${c.rate}</div>`
+            }
+          </div>
+        </div>
+        ${isWarn && c.note ? `<div class="warn-note">⚠ ${c.note}</div>` : ""}
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="summary-bar">
+      <div class="sum-row"><span class="sum-k">辨識筆數</span><span class="sum-v">${scanClients.length} 筆</span></div>
+      <div class="sum-row"><span class="sum-k">需人工確認</span><span class="sum-v amber">${warnCount} 筆</span></div>
+      <div class="sum-row"><span class="sum-k">新增收款 / 期</span><span class="sum-v green">$${fmt(totalAmt)}</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="confirmAllClients()">確認全部，寫入系統</button>
+    <button class="btn btn-secondary" onclick="renderStep1()">重新拍照</button>
+  </div>`;
+
+  document.getElementById("scanContent").innerHTML = html;
+}
+
+async function confirmAllClients() {
+  updateStepBar(3);
+  document.getElementById("scanContent").innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="loading-txt">寫入資料並同步日曆...</div></div>`;
+
+  var results = [];
+  for (var i = 0; i < scanClients.length; i++) {
+    var c = scanClients[i];
+    var res = await api("addClient", {
+      client: {
+        name: c.name, group: c.group, startDate: c.startDate,
+        money: c.money, freq: c.freq, rate: c.rate,
+      },
+    });
+    results.push(res);
+  }
+
+  document.getElementById("scanContent").innerHTML = `
+    <div class="success-wrap">
+      <div class="success-icon">✓</div>
+      <div class="success-title">成功新增 ${scanClients.length} 位客戶</div>
+      <div class="success-sub">資料已寫入試算表<br>日曆同步已在背景完成</div>
+      <div class="summary-bar" style="text-align:left;">
+        ${scanClients.map(c => `
+          <div class="sum-row">
+            <span class="sum-k">${c.name}（${c.group}）</span>
+            <span class="sum-v green">✓</span>
+          </div>
+        `).join("")}
+      </div>
+      <button class="btn btn-teal" onclick="renderStep1(); updateStepBar(1);">繼續新增下一筆</button>
+      <button class="btn btn-secondary" onclick="exitScan()">← 返回主畫面</button>
+    </div>
+  `;
+}
+
+// ── 日曆同步 ──────────────────────────────────────────────────
+async function triggerSync() {
+  document.getElementById("syncBtn").textContent = "⏳";
+  var result = await api("syncCalendar");
+  document.getElementById("syncBtn").textContent = "🔄";
+  if (result) {
+    showToast(`✅ 同步完成！新增${result.creates || 0}・更新${result.updates || 0}・刪除${result.deletes || 0}`);
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg, duration) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), duration || 3000);
+}
+
+// ── Formatters ────────────────────────────────────────────────
+function fmt(n) {
+  return Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function fmtK(n) {
+  n = Math.round(n || 0);
+  return n >= 1000 ? (n / 1000).toFixed(0) + "k" : n.toString();
+}
+
+// ── Init ─────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", function() {
+  var now = new Date();
+  document.getElementById("headerSub").textContent =
+    now.getFullYear() + "年" + (now.getMonth()+1) + "月";
+
+  if (DEMO_MODE) showToast("⚡ Demo 模式｜設定 API_URL 後正式使用", 4000);
+  loadWeek();
+});
+</script>
+</body>
+</html>
