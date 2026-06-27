@@ -356,37 +356,58 @@ body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink)
 <!-- 設定 -->
 <div class="scr" id="scr-settings">
   <div class="setting-group">
-    <div class="setting-group-title">📣 LINE 提醒通知</div>
+    <div class="setting-group-title">🔔 手機通知</div>
+    <div class="card-w" style="padding:14px;" id="notif-permission-card">
+      <div id="notif-permission-box">
+        <div class="setting-info" style="margin-bottom:10px;"><div class="s-sub">開啟後，收款日會直接跳手機通知（需先允許通知權限）</div></div>
+        <button class="btn btn-teal btn-sm" id="enable-notif-btn" onclick="enableNotifications()">🔔 開啟手機通知</button>
+      </div>
+    </div>
+    <div class="card-w" style="padding:0 14px;display:none;" id="notif-options">
+      <div class="setting-row">
+        <div class="setting-info"><div class="s-title">開啟 APP 時提醒</div><div class="s-sub">每次打開檢查今日收款並跳通知</div></div>
+        <button class="toggle on" id="tog-openNotify" onclick="toggleSetting('openNotify')"><div class="toggle-knob"></div></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><div class="s-title">每日定時提醒</div><div class="s-sub">每天固定時間提醒今日收款</div></div>
+        <button class="toggle on" id="tog-dailyNotify" onclick="toggleSetting('dailyNotify')"><div class="toggle-knob"></div></button>
+      </div>
+      <div class="setting-row" style="padding-left:16px;">
+        <div class="setting-info"><div class="s-sub">提醒時間</div></div>
+        <input class="time-inp" type="time" id="time-dailyNotify" value="08:00" onchange="saveSetting('dailyNotifyTime',this.value)">
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><div class="s-title">倒數提醒</div><div class="s-sub">倒數第二次、最後一次收款額外提醒</div></div>
+        <button class="toggle on" id="tog-countdownNotify" onclick="toggleSetting('countdownNotify')"><div class="toggle-knob"></div></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><div class="s-title">測試通知</div><div class="s-sub">立即跳一則測試通知看看</div></div>
+        <button class="btn-sm btn-ghost" style="width:auto;" onclick="testNotification()">測試</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-group-title">📧 Email 備援通知</div>
     <div class="card-w" style="padding:0 14px;">
       <div class="setting-row">
-        <div class="setting-info"><div class="s-title">每週收款預告</div><div class="s-sub">週一早上推送本週名單</div></div>
-        <button class="toggle on" id="tog-weekly" onclick="toggleSetting('weekly')"><div class="toggle-knob"></div></button>
+        <div class="setting-info"><div class="s-title">啟用 Email 提醒</div><div class="s-sub">每天定時寄出收款摘要，當作備援</div></div>
+        <button class="toggle" id="tog-email" onclick="toggleSetting('email')"><div class="toggle-knob"></div></button>
       </div>
-      <div class="setting-row" id="row-weekly-time" style="padding-left:16px;">
-        <div class="setting-info"><div class="s-sub">推送時間</div></div>
-        <input class="time-inp" type="time" id="time-weekly" value="08:00" onchange="saveSetting('weeklyTime',this.value)">
+      <div class="setting-row" style="padding-left:16px;">
+        <div class="setting-info"><div class="s-sub">收件 Email</div></div>
+        <input class="time-inp" type="email" id="email-addr" placeholder="you@gmail.com" style="width:160px;" onchange="saveSetting('emailAddr',this.value)">
       </div>
-      <div class="setting-row">
-        <div class="setting-info"><div class="s-title">前一天提醒</div><div class="s-sub">到期前一天早上推送</div></div>
-        <button class="toggle on" id="tog-daily" onclick="toggleSetting('daily')"><div class="toggle-knob"></div></button>
-      </div>
-      <div class="setting-row" id="row-daily-time" style="padding-left:16px;">
-        <div class="setting-info"><div class="s-sub">推送時間</div></div>
-        <input class="time-inp" type="time" id="time-daily" value="08:00" onchange="saveSetting('dailyTime',this.value)">
+      <div class="setting-row" style="padding-left:16px;">
+        <div class="setting-info"><div class="s-sub">寄送時間</div></div>
+        <input class="time-inp" type="time" id="time-email" value="08:00" onchange="saveSetting('emailTime',this.value)">
       </div>
       <div class="setting-row">
-        <div class="setting-info"><div class="s-title">倒數提醒</div><div class="s-sub">倒數第二次、最後一次收款當天推送</div></div>
-        <button class="toggle on" id="tog-countdown" onclick="toggleSetting('countdown')"><div class="toggle-knob"></div></button>
-      </div>
-      <div class="setting-row" id="row-countdown-time" style="padding-left:16px;">
-        <div class="setting-info"><div class="s-sub">推送時間</div></div>
-        <input class="time-inp" type="time" id="time-countdown" value="08:00" onchange="saveSetting('countdownTime',this.value)">
-      </div>
-      <div class="setting-row">
-        <div class="setting-info"><div class="s-title">月結報告</div><div class="s-sub">每月 1 日推送上月統計</div></div>
+        <div class="setting-info"><div class="s-title">每月月結報告</div><div class="s-sub">每月 1 日寄出上月統計</div></div>
         <button class="toggle" id="tog-monthly" onclick="toggleSetting('monthly')"><div class="toggle-knob"></div></button>
       </div>
     </div>
+    <div style="font-size:11px;color:var(--inklt);padding:4px 4px 0;">※ Email 通知需搭配 Apps Script 後端設定，詳見部署說明</div>
   </div>
 
   <div class="setting-group">
@@ -459,10 +480,11 @@ var DB = {
   nameOptions:   [],
   rateUsage:     {"0.012":5,"0.02":8},
   settings: {
-    weekly:true, weeklyTime:"08:00",
-    daily:true,  dailyTime:"08:00",
-    countdown:true, countdownTime:"08:00",
+    openNotify:true, dailyNotify:true, dailyNotifyTime:"08:00",
+    countdownNotify:true,
+    email:false, emailAddr:"", emailTime:"08:00",
     monthly:false,
+    notifEnabled:false,
     apiUrl:"",
   },
   init(){
@@ -493,6 +515,38 @@ var DB = {
     var k=String(r); this.rateUsage[k]=(this.rateUsage[k]||0)+1; this.save();
   },
   getColor(key){return this.colorGroups.find(g=>g.key===key)||{name:"未知",hex:"#94A3B8",key:"unknown"};},
+
+  // 從後端（Apps Script）載入真實資料
+  async syncFromBackend(){
+    if(!API_URL) return false;  // 沒設定網址就維持本地資料
+    try{
+      var resp = await fetch(API_URL, {
+        method:"POST",
+        body: JSON.stringify({ action:"getClients" }),
+      });
+      var data = await resp.json();
+      if(data.success && data.clients){
+        // 後端資料覆蓋本地，並補上 id 與選項
+        this.clients = data.clients.map(function(c, idx){
+          return {
+            id: c.rowIndex || (idx+1),
+            rowIndex: c.rowIndex,
+            name: c.name, colorKey: c.colorKey,
+            startDate: c.startDate, money: c.money,
+            months: c.months, rate: c.rate, note: c.note || "",
+          };
+        });
+        // 重建姓名選項
+        var self = this;
+        this.clients.forEach(function(c){
+          if(c.name && !self.nameOptions.includes(c.name)) self.nameOptions.push(c.name);
+        });
+        this.save();
+        return true;
+      }
+    }catch(e){ console.log("同步失敗", e); }
+    return false;
+  },
 };
 
 // ═══════════════════════════════════════════════════════
@@ -1280,23 +1334,34 @@ async function confirmScan(){
 // SETTINGS
 // ═══════════════════════════════════════════════════════
 function renderSettings(){
-  // Toggles
-  ["weekly","daily","countdown","monthly"].forEach(k=>{
+  ["openNotify","dailyNotify","countdownNotify","email","monthly"].forEach(k=>{
     var el=document.getElementById("tog-"+k);
     if(el) el.classList.toggle("on",!!DB.settings[k]);
   });
-  // Times
-  ["weekly","daily","countdown"].forEach(k=>{
+  ["dailyNotify","email"].forEach(k=>{
     var el=document.getElementById("time-"+k);
     if(el) el.value=DB.settings[k+"Time"]||"08:00";
   });
-  // API status
-  document.getElementById("api-status").textContent = API_URL ? "已設定" : "未設定（Demo 模式）";
+  var ea=document.getElementById("email-addr");
+  if(ea) ea.value=DB.settings.emailAddr||"";
 
-  // Color groups
+  updateNotifUI();
+  document.getElementById("api-status").textContent = API_URL ? "已設定" : "未設定（Demo 模式）";
   renderColorGroups();
-  // Name DB
   renderNameDb();
+}
+
+function updateNotifUI(){
+  var box=document.getElementById("notif-permission-box");
+  var opts=document.getElementById("notif-options");
+  if(!box||!opts) return;
+  var granted = ("Notification" in window) && Notification.permission === "granted";
+  if(granted){
+    box.innerHTML=`<div class="setting-info"><div class="s-title" style="color:var(--green)">✓ 手機通知已開啟</div><div class="s-sub">收款日會自動跳通知</div></div>`;
+    opts.style.display="block";
+  } else {
+    opts.style.display="none";
+  }
 }
 
 function toggleSetting(k){
@@ -1306,6 +1371,79 @@ function toggleSetting(k){
 }
 
 function saveSetting(k,v){DB.settings[k]=v;DB.save();}
+
+// ═══════════════════════════════════════════════════════
+// 手機通知（PWA Notifications）
+// ═══════════════════════════════════════════════════════
+async function enableNotifications(){
+  if(!("Notification" in window)){ showToast("⚠️ 此瀏覽器不支援通知"); return; }
+  var isStandalone = window.navigator.standalone || window.matchMedia("(display-mode: standalone)").matches;
+  var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(isiOS && !isStandalone){
+    alert("📱 iPhone 使用通知前，請先：\n\n1. 點 Safari 底部的「分享」按鈕\n2. 選「加入主畫面」\n3. 從主畫面圖示打開 APP\n4. 再回來開啟通知");
+    return;
+  }
+  var perm = await Notification.requestPermission();
+  if(perm === "granted"){
+    DB.settings.notifEnabled=true; DB.save();
+    showToast("✅ 手機通知已開啟！");
+    registerSW();
+    updateNotifUI();
+    showNotification("🔔 通知已開啟", "收款日將會自動提醒您");
+  } else {
+    showToast("⚠️ 通知權限被拒，請到手機設定開啟");
+  }
+}
+
+async function registerSW(){
+  if("serviceWorker" in navigator){
+    try { await navigator.serviceWorker.register("sw.js"); } catch(e){}
+  }
+}
+
+function showNotification(title, body){
+  if(!("Notification" in window) || Notification.permission!=="granted") return;
+  if("serviceWorker" in navigator && navigator.serviceWorker.controller){
+    navigator.serviceWorker.ready.then(reg=>{
+      reg.showNotification(title, { body, icon:"icon.png", badge:"icon.png", tag:"ins-"+Date.now() });
+    });
+  } else {
+    try { new Notification(title, { body }); } catch(e){}
+  }
+}
+
+function testNotification(){
+  if(Notification.permission!=="granted"){showToast("⚠️ 請先開啟通知權限");return;}
+  showNotification("🧪 測試通知", "如果你看到這則通知，代表設定成功！");
+  showToast("已送出測試通知");
+}
+
+function checkAndNotifyToday(){
+  if(!DB.settings.openNotify) return;
+  if(!("Notification" in window) || Notification.permission!=="granted") return;
+  var today=new Date();
+  var todayStr=fmtDFull(today);
+  var items=[], total=0, countdownItems=[];
+  DB.clients.forEach(c=>{
+    var sch=calcSchedule(c.startDate,c.months);
+    var amt=c.money*c.rate;
+    sch.forEach((d,idx)=>{
+      if(fmtDFull(d)!==todayStr) return;
+      items.push({name:c.name,amount:amt}); total+=amt;
+      if(isLast(idx,c.months)) countdownItems.push(c.name+"（最後一期⭐⭐）");
+      else if(is2nd(idx,c.months)) countdownItems.push(c.name+"（倒數第二期⭐）");
+    });
+  });
+  if(items.length===0) return;
+  var lastNotify = localStorage.getItem("lastNotifyDate");
+  if(lastNotify === todayStr) return;
+  localStorage.setItem("lastNotifyDate", todayStr);
+  var body="今日共 "+items.length+" 筆，應收 $"+fmt(total)+"\n"+items.map(i=>i.name+" $"+fmt(i.amount)).join("、");
+  showNotification("📌 今日收款提醒", body);
+  if(DB.settings.countdownNotify && countdownItems.length>0){
+    setTimeout(()=>showNotification("⭐ 倒數收款提醒", countdownItems.join("\n")), 1500);
+  }
+}
 
 function renderColorGroups(){
   var html="";
@@ -1363,7 +1501,16 @@ function addNameToDb(){
 
 function setApiUrl(){
   var v=prompt("請輸入 Apps Script Web App 網址：",API_URL);
-  if(v!==null){API_URL=v;DB.settings.apiUrl=v;DB.save();renderSettings();}
+  if(v!==null){
+    API_URL=v.trim(); DB.settings.apiUrl=API_URL; DB.save(); renderSettings();
+    if(API_URL){
+      showToast("🔄 連線測試中...");
+      DB.syncFromBackend().then(function(ok){
+        if(ok){ showToast("✅ 連線成功，資料已同步"); switchTab("today"); }
+        else { showToast("⚠️ 連不上，請檢查網址是否正確"); }
+      });
+    }
+  }
 }
 
 function clearCache(){
@@ -1394,7 +1541,32 @@ document.getElementById("hdrSub").textContent=(today.getMonth()+1)+"月"+today.g
 
 renderToday();
 
-if(!API_URL) setTimeout(()=>showToast("⚡ Demo 模式運行中",3000),500);
+// 註冊 Service Worker（PWA 通知 + 離線快取）
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+// 從後端同步真實資料（有設定 API 網址才會同步）
+if(API_URL){
+  showToast("🔄 同步資料中...");
+  DB.syncFromBackend().then(function(ok){
+    if(ok){
+      // 重新整理目前畫面
+      renderToday();
+      showToast("✅ 已同步最新資料");
+      // 同步後檢查今日通知
+      if(DB.settings.notifEnabled && ("Notification" in window) && Notification.permission==="granted"){
+        setTimeout(checkAndNotifyToday, 1000);
+      }
+    }
+  });
+} else {
+  setTimeout(()=>showToast("⚡ Demo 模式｜到設定填入 API 網址後顯示真實資料",4000),500);
+  if(DB.settings.notifEnabled && ("Notification" in window) && Notification.permission==="granted"){
+    setTimeout(checkAndNotifyToday, 1500);
+  }
+}
+
 </script>
 </body>
 </html>
