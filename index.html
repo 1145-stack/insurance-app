@@ -514,7 +514,47 @@ var DB = {
   useRate(r){
     var k=String(r); this.rateUsage[k]=(this.rateUsage[k]||0)+1; this.save();
   },
-  getColor(key){return this.colorGroups.find(g=>g.key===key)||{name:"未知",hex:"#94A3B8",key:"unknown"};},
+  getColor(key){
+    if(!key) return {name:"未分類",hex:"#94A3B8",key:"unknown"};
+    // 1. 先精確比對 key（blue、orange...）
+    var exact = this.colorGroups.find(g=>g.key===key);
+    if(exact) return exact;
+    // 2. 比對組別名稱完全相同（藍色組）
+    var byName = this.colorGroups.find(g=>g.name===key);
+    if(byName) return byName;
+    // 3. 模糊比對：LINE 來的「藍色」「藍」對應「藍色組」
+    var colorMap = {
+      "藍":"blue","藍色":"blue","blue":"blue",
+      "橘":"orange","橘色":"orange","橙":"orange","orange":"orange",
+      "紅":"red","紅色":"red","red":"red",
+      "綠":"green","綠色":"green","green":"green",
+      "黑":"black","黑色":"black","black":"black",
+      "黃":"yellow","黃色":"yellow","yellow":"yellow",
+      "紫":"purple","紫色":"purple","purple":"purple",
+    };
+    // 去掉「組」字再比對
+    var cleaned = String(key).replace(/組$/,"").trim();
+    var mappedKey = colorMap[cleaned] || colorMap[key];
+    if(mappedKey){
+      var g = this.colorGroups.find(x=>x.key===mappedKey);
+      if(g) return g;
+    }
+    // 4. 包含關係：名稱含有該顏色字（「深藍色組」含「藍」）
+    for(var i=0;i<this.colorGroups.length;i++){
+      var grp = this.colorGroups[i];
+      var grpColor = grp.name.replace(/組$/,"");
+      if(cleaned.indexOf(grpColor)!==-1 || grpColor.indexOf(cleaned)!==-1) return grp;
+    }
+    // 都對不上 → 未知（但保留原始文字當名稱，比「未知」好辨識）
+    return {name:cleaned||"未分類",hex:"#94A3B8",key:key};
+  },
+
+  // 把任意顏色文字正規化成標準 colorKey（給同步用）
+  normalizeColorKey(raw){
+    if(!raw) return "";
+    var g = this.getColor(raw);
+    return (g.key && g.key!=="unknown") ? g.key : raw;
+  },
 
   // 從後端（Apps Script）載入真實資料
   async syncFromBackend(){
@@ -526,18 +566,19 @@ var DB = {
       });
       var data = await resp.json();
       if(data.success && data.clients){
+        var self = this;
         // 後端資料覆蓋本地，並補上 id 與選項
         this.clients = data.clients.map(function(c, idx){
           return {
             id: c.rowIndex || (idx+1),
             rowIndex: c.rowIndex,
-            name: c.name, colorKey: c.colorKey,
+            name: c.name,
+            colorKey: self.normalizeColorKey(c.colorKey),  // 顏色文字正規化
             startDate: c.startDate, money: c.money,
             months: c.months, rate: c.rate, note: c.note || "",
           };
         });
         // 重建姓名選項
-        var self = this;
         this.clients.forEach(function(c){
           if(c.name && !self.nameOptions.includes(c.name)) self.nameOptions.push(c.name);
         });
