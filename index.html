@@ -947,7 +947,21 @@ function closeEdit(id){
   document.getElementById("cedit-"+id).style.display="none";
 }
 
-function saveClient(id){
+// 寫回後端（Apps Script）的輔助函式
+async function backendCall(action, payload){
+  if(!API_URL) return {success:true, local:true};  // Demo 模式只改本地
+  try{
+    var resp = await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify(Object.assign({action:action}, payload||{})),
+    });
+    return await resp.json();
+  }catch(e){
+    return {success:false, error:e.message};
+  }
+}
+
+async function saveClient(id){
   var c=DB.clients.find(x=>x.id===id);
   if(!c) return;
   var name   = document.getElementById("e-name-"+id).value.trim();
@@ -965,13 +979,42 @@ function saveClient(id){
   c.months=months; c.money=money; c.rate=rate; c.note=note;
   if(!DB.nameOptions.includes(name)) DB.nameOptions.push(name);
   DB.save();
-  showToast("✅ "+name+" 已更新");
+
+  // 同步寫回試算表
+  if(API_URL && c.rowIndex){
+    showToast("🔄 儲存中...");
+    var res = await backendCall("updateClient", {client:{
+      rowIndex:c.rowIndex, name:name, colorKey:color, startDate:date,
+      months:months, money:money, rate:rate, note:note,
+    }});
+    if(res && res.success){ showToast("✅ "+name+" 已更新並同步"); }
+    else { showToast("⚠️ 本地已存，但同步失敗"); }
+  } else {
+    showToast("✅ "+name+" 已更新");
+  }
   renderClients(document.getElementById("clientSearch").value);
 }
 
-function deleteClient(id){
+async function deleteClient(id){
   if(!confirm("確定刪除這筆客戶資料？")) return;
-  DB.clients=DB.clients.filter(c=>c.id!==id);
+  var c=DB.clients.find(x=>x.id===id);
+  // 同步刪除試算表的列
+  if(API_URL && c && c.rowIndex){
+    showToast("🔄 刪除中...");
+    var res = await backendCall("deleteClient", {rowIndex:c.rowIndex});
+    if(res && res.success){
+      // 重新從後端同步（因為刪一列後 rowIndex 會變動）
+      await DB.syncFromBackend();
+      renderClients();
+      showToast("🗑 已刪除並同步");
+      return;
+    } else {
+      showToast("⚠️ 同步刪除失敗，請重試");
+      return;
+    }
+  }
+  // Demo 模式
+  DB.clients=DB.clients.filter(x=>x.id!==id);
   DB.save();
   renderClients();
   showToast("🗑 已刪除");
@@ -1154,7 +1197,7 @@ function updatePreview(){
 // ═══════════════════════════════════════════════════════
 // SUBMIT CLIENT
 // ═══════════════════════════════════════════════════════
-function submitClient(){
+async function submitClient(){
   var name=document.getElementById("inp-name").value.trim();
   var colorKey=SS["color"].selected;
   var dateVal=document.getElementById("inp-date").value;
@@ -1164,6 +1207,27 @@ function submitClient(){
   if(!name||!colorKey||!dateVal||!money||!selMonths||!selRate){
     showToast("⚠️ 請填寫所有必填欄位");return;
   }
+
+  // 寫回試算表
+  if(API_URL){
+    showToast("🔄 新增中...");
+    var res = await backendCall("addClient", {client:{
+      name:name, colorKey:colorKey, startDate:dateVal,
+      money:money, months:selMonths, rate:selRate, note:note,
+    }});
+    if(res && res.success){
+      await DB.syncFromBackend();  // 重新同步取得 rowIndex
+      DB.useRate(selRate);
+      showToast("✅ "+name+" 已新增並同步！");
+      clearForm();
+      switchTab("today");
+      return;
+    } else {
+      showToast("⚠️ 同步失敗，請檢查網路"); return;
+    }
+  }
+
+  // Demo 模式
   DB.addClient({name,colorKey,startDate:dateVal,money,months:selMonths,rate:selRate,note});
   showToast("✅ "+name+" 已新增！");
   clearForm();
